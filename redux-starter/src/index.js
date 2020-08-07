@@ -1,7 +1,8 @@
 // import store
 // dispatch actions from actions.js functions
 import store from "./store";
-import { bugAdded, bugRemoved } from "./actions";
+console.log(store);
+import { bugAdded, bugRemoved, bugResolved } from "./actions";
 
 const unsubscribe = store.subscribe(() => {
   console.log("store changed!", store.getState());
@@ -15,6 +16,10 @@ store.dispatch(bugAdded("Bug 1"));
 // check console to see how it changes. After Action 1 runs, the unsubscribe function is invoked before action 2 runs.
 
 // Action 2
-store.dispatch(bugRemoved("1"));
+store.dispatch(bugResolved(1));
 
+// Action 3
+store.dispatch(bugRemoved(1));
+
+// console should print 1. bugAdded, 2. BugResolved, and 3. bugRemoved
 console.log(store.getState());
