@@ -1,3 +1,4 @@
+// index.js file running on webpack port 9000
 // import store
 // dispatch actions from actions.js functions
 import store from "./store";
