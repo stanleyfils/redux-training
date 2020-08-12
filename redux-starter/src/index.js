@@ -1,26 +1,89 @@
-// index.js file running on webpack port 9000
-// import store
-// dispatch actions from actions.js functions
-import store from "./store";
-console.log(store);
-import { bugAdded, bugRemoved, bugResolved } from "./actions";
+// use this index2.js file by togglng
+// index2.js is on webpack port 5000, not 9000
 
-const unsubscribe = store.subscribe(() => {
-  console.log("store changed!", store.getState());
+// change to from "./store when using redux dev tools because only store supports enhancers"
+import configureStore from "./store/configureStore";
+import {
+  bugAdded,
+  bugResolved,
+  bugAssignedToUser,
+  getUnresolvedBugs,
+  getBugsByUser,
+} from "./store/bugs";
+import { projectAdded } from "./store/projects";
+import { userAdded } from "./store/users";
+import { loadBugs } from "./store/bugs";
+
+const store = configureStore();
+
+store.subscribe(() => {
+  console.log("Store changed!");
 });
 
-// Action 1
+// Actions
 // dispatch the action along with it's payload as a parameter
-store.dispatch(bugAdded("Bug 1"));
 
 // unsubscribe();
 // check console to see how it changes. After Action 1 runs, the unsubscribe function is invoked before action 2 runs.
 
-// Action 2
-store.dispatch(bugResolved(1));
+// store.dispatch(userAdded({ name: "User 1" }));
+// store.dispatch(userAdded({ name: "User 2" }));
+// store.dispatch(projectAdded({ name: "Project 1" }));
+// store.dispatch(bugAdded({ description: "Bug 1" }));
+// store.dispatch(bugAdded({ description: "Bug 2" }));
+// store.dispatch(bugAdded({ description: "Bug 3" }));
+// store.dispatch(bugAssignedToUser({ bugId: 1, userId: 1 }));
+// store.dispatch(bugResolved({ id: 1 }));
+// removed actions.bugAdded and actions.bugResolved are no longer importing all actions from bugs.js (import * as actions)
 
-// Action 3
-store.dispatch(bugRemoved(1));
+// const bugs = getBugsByUser(1)(store.getState());
+// console.log(bugs);
 
-// console should print 1. bugAdded, 2. BugResolved, and 3. bugRemoved
-console.log(store.getState());
+// const unresolvedBugs = getUnresolvedBugs(store.getState());
+// const x = getUnresolvedBugs(store.getState());
+// const y = getUnresolvedBugs(store.getState());
+
+// console.log(store.getState());
+
+// console.log(x === y);
+// x === y is true because of memoization
+
+// Why would you want to dispatch a function?
+// store.dispatch((dispatch, getState) => {
+// to call an API endpoint
+// when calling an API, you're dealing with promises
+// when the promise is resolved => dispatch() action
+// dispatch({ type: "bugsReceived", bugs: [1, 2, 3] });
+// console.log(getState());
+// if the promise is rejected => dispacth() an action that indicates an error
+// you now can have logic. You can give your store the ability to dispatch function by writing a middleware fucntion
+// });
+
+// Exercise
+// store.dispatch({
+//   type: "error",
+//   payload: { message: "An error occurred." },
+// });
+
+// create dispatch action using commented out action function from api.js
+// remove data that isn't required
+// store.dispatch({
+//   type: "apiCallBegan",
+//   payload: {
+//     url: "/bugs",
+//     onSuccess: "bugsReceived",
+//     onError: "apiRequestFailed",
+//   },
+// });
+
+// UI Layer
+store.dispatch(loadBugs());
+
+// use an action creator instead of the above code. It's easier and safer
+// no longer needed because we created the UI layer loadBugs
+// store.dispatch(
+//   actions.apiCallBegan({
+//     url: "/bugs",
+//     onSuccess: "bugs/bugsReceived",
+//   })
+// );
