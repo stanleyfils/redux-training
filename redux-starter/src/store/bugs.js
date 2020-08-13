@@ -4,11 +4,13 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { createSelector } from "reselect";
 import { apiCallBegan } from "./api";
+import moment from "moment";
+import { pullAt } from "lodash";
 
 // REDUCER
 // set initial state. In this case, it's an empty array []
 // set intial id to 0
-let lastId = 0;
+// let lastId = 0;
 
 const slice = createSlice({
   name: "bugs",
@@ -19,27 +21,37 @@ const slice = createSlice({
   },
   reducers: {
     // actions => action handlers
+    bugsRequested: (bugs, action) => {
+      bugs.loading = true;
+    },
+
+    bugsRequestFailed: (bugs, action) => {
+      bugs.loading = false;
+    },
+
     // the name of this action is actually bugs/bugsReceived
     bugsReceived: (bugs, action) => {
       bugs.list = action.payload;
+      bugs.loading = false;
+      bugs.lastFetch = Date.now(); // logs current time as a timestamp
     },
 
     bugAssignedToUser: (bugs, action) => {
       // use object destructuring to extrct bugId and userId from action.payload
       // create bugId and userId payload properties
-      const { bugId, userId } = action.payload;
+      const { id: bugId, userId } = action.payload;
       const index = bugs.list.findIndex((bug) => bug.id === bugId);
       bugs.list[index].userId = userId;
     },
 
+    // command -> event
+    // addBug -> bugAdded
     bugAdded: (bugs, action) => {
-      bugs.list.push({
-        id: ++lastId,
-        name: action.payload.description,
-        resolved: false,
-      });
+      bugs.list.push(action.payload); // with this, we no longer need to generate id's on the client side so we can remove lastId variable.
     },
 
+    // command -> event
+    // resolveBug -> bugResolved
     bugResolved: (bugs, action) => {
       const index = bugs.list.findIndex((bug) => bug.id === action.payload.id);
       bugs.list[index].resolved = true;
@@ -48,21 +60,64 @@ const slice = createSlice({
 });
 // console.log(slice);
 
-export const {
+const {
   bugAdded,
   bugResolved,
   bugAssignedToUser,
   bugsReceived,
+  bugsRequested,
+  bugsRequestFailed,
 } = slice.actions;
 export default slice.reducer;
 
 // Action Creators
 const url = "/bugs";
 
-export const loadBugs = () =>
+// remember: () = fn(dispatch, getState)
+export const loadBugs = () => (dispatch, getState) => {
+  const { lastFetch } = getState().entities.bugs;
+
+  // console.log(lastFetch);
+
+  const diffInMinutes = moment().diff(moment(lastFetch), "minutes");
+  if (diffInMinutes < 10) return;
+  // in a real file, 10 minutes should be storedin config file.
+
+  dispatch(
+    apiCallBegan({
+      url,
+      onStart: bugsRequested.type,
+      onSuccess: bugsReceived.type, //or slice.actions.bugsReceived.type ifyou dont like to extract
+      onError: bugsRequestFailed.type,
+    })
+  );
+};
+
+export const addBug = (bug) =>
   apiCallBegan({
     url,
-    onSuccess: bugsReceived.type, //or slice.actions.bugsReceived.type ifyou dont like to extract
+    method: "post",
+    data: bug,
+    onSuccess: bugAdded.type,
+  });
+
+// put and patch are used for upating data
+// put = update entire resource
+// patch = update 1 or more properties
+export const resolveBug = (id) =>
+  apiCallBegan({
+    url: url + "/" + id, // = /bugs/1
+    method: "patch",
+    data: { resolved: true },
+    onSuccess: bugResolved.type,
+  });
+
+export const assignBugToUser = (bugId, userId) =>
+  apiCallBegan({
+    url: url + "/" + bugId, // = /bugs/1
+    method: "patch",
+    data: { userId },
+    onSuccess: bugAssignedToUser.type,
   });
 
 // add selector functions here:

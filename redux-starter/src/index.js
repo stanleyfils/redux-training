@@ -9,10 +9,14 @@ import {
   bugAssignedToUser,
   getUnresolvedBugs,
   getBugsByUser,
+  loadBugs,
+  addBug,
+  resolveBug,
+  assignBugToUser,
 } from "./store/bugs";
 import { projectAdded } from "./store/projects";
 import { userAdded } from "./store/users";
-import { loadBugs } from "./store/bugs";
+// import {loadBugs} from "./store/bugs";
 
 const store = configureStore();
 
@@ -77,7 +81,14 @@ store.subscribe(() => {
 // });
 
 // UI Layer
+// store.dispatch(addBug({ description: "a" }));
+
 store.dispatch(loadBugs());
+
+// setTimeout(() => store.dispatch(resolveBug(1)), 2000);
+setTimeout(() => store.dispatch(assignBugToUser(1, 4)), 2000);
+
+// setTimeout(() => store.dispatch(loadBugs()), 2000); //add this to test caching
 
 // use an action creator instead of the above code. It's easier and safer
 // no longer needed because we created the UI layer loadBugs

@@ -18,9 +18,11 @@ const api = ({ dispatch }) => (next) => async (action) => {
   // call API
   if (action.type !== actions.apiCallBegan.type) return next(action);
 
-  next(action); // you have to pass this action as well. Comment out to see what happens in redux dev tools
+  const { url, method, data, onStart, onSuccess, onError } = action.payload;
 
-  const { url, method, data, onSuccess, onError } = action.payload;
+  if (onStart) dispatch({ type: onStart });
+
+  next(action); // you have to pass this action as well. Comment out to see what happens in redux dev tools
 
   try {
     const response = await axios.request({
@@ -35,7 +37,7 @@ const api = ({ dispatch }) => (next) => async (action) => {
     if (onSuccess) dispatch({ type: onSuccess, payload: response.data }); //must destructure store in API function in order to access dispatch here. Replace store with ({ dispatch }). dispatch and getState are always available.
   } catch (error) {
     // add a general error action here
-    dispatch(actions.apiCallFailed(error));
+    dispatch(actions.apiCallFailed(error.message)); //adding ,message makes this serializable
     // This is for specific action requests
     if (onError) dispatch({ type: onError, payload: error });
   }
